@@ -5,6 +5,7 @@ import java.util.concurrent.*;
 
 // demo1: test100_000_000() time = 46779
 // demo2: test100_000_000() time = 23147
+// demo3: test100_000_000() time = 15169
 
 
 // TODO: Sign up to Heinz's "Java Specialists' Newsletter":
