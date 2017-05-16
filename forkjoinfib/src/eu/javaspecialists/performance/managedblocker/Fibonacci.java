@@ -9,7 +9,7 @@ import java.util.concurrent.*;
 // demo3: test100_000_000() time = 15169
 // demo4: test100_000_000() time = 10114
 // demo5: test100_000_000() time = 7403
-
+// demo6: test100_000_000() time = 7296
 
 // TODO: Sign up to Heinz's "Java Specialists' Newsletter":
 // TODO: tinyurl.com/riga17
@@ -56,15 +56,37 @@ public class Fibonacci {
             }
         } else if (result == RESERVED) {
             try {
-                synchronized (RESERVED) {
-                    while((result = cache.get(n)) == RESERVED) {
-                        RESERVED.wait();
-                    }
-                }
+                ReservedFibonacciBlocker blocker = new ReservedFibonacciBlocker(n, cache);
+                ForkJoinPool.managedBlock(blocker);
+                result = blocker.result;
             } catch (InterruptedException e) {
                 throw new CancellationException("interrupted");
             }
         }
         return result;
+    }
+
+    private class ReservedFibonacciBlocker implements ForkJoinPool.ManagedBlocker {
+        private BigInteger result;
+        private final int n;
+        private final Map<Integer, BigInteger> cache;
+
+        public ReservedFibonacciBlocker(int n, Map<Integer, BigInteger> cache) {
+            this.n = n;
+            this.cache = cache;
+        }
+
+        public boolean isReleasable() {
+            return ((result = cache.get(n)) != RESERVED);
+        }
+
+        public boolean block() throws InterruptedException {
+            synchronized (RESERVED) {
+                while (!isReleasable()) {
+                    RESERVED.wait();
+                }
+            }
+            return true;
+        }
     }
 }
